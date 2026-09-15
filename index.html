@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A10 Home Server Dashboard</title>
+    <style>
+        body { font-family: sans-serif; background: #121212; color: #fff; margin: 20px; }
+        .card { background: #1e1e1e; padding: 20px; margin-bottom: 15px; border-radius: 8px; }
+        h1, h2 { color: #00adb5; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🚀 A10 Server - Dashboard</h1>
+        <p>Status: <strong id="status">Memuat...</strong></p>
+        <p>🌡️ Suhu Chipset: <span id="suhu">0°C</span></p>
+        <p>💨 Status Kipas: <span id="kipas">-</span></p>
+        <p>💾 Penyimpanan: <pre id="storage">-</pre></p>
+    </div>
+    <script>
+        async function updateStats() {
+            try {
+                const res = await fetch('/api/stats');
+                const data = await res.json();
+                document.getElementById('status').innerText = data.statusServer;
+                document.getElementById('suhu').innerText = data.suhu;
+                document.getElementById('kipas').innerText = data.kipas;
+                document.getElementById('storage').innerText = data.internalSpace;
+            } catch (e) { document.getElementById('status').innerText = "OFFLINE 🔴"; }
+        }
+        setInterval(updateStats, 3000);
+        updateStats();
+    </script>
+</body>
+</html>
