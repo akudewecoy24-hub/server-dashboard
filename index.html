@@ -5,32 +5,62 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>A10 Home Server Dashboard</title>
     <style>
-        body { font-family: sans-serif; background: #121212; color: #fff; margin: 20px; }
-        .card { background: #1e1e1e; padding: 20px; margin-bottom: 15px; border-radius: 8px; }
+        body { font-family: sans-serif; background: #121212; color: #fff; margin: 20px; text-align: center; }
+        .card { background: #1e1e1e; padding: 20px; margin-bottom: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); border-left: 5px solid #555; max-width: 500px; margin: auto; }
+        .online { border-left: 5px solid #28a745; }
+        .offline { border-left: 5px solid #dc3545; }
         h1, h2 { color: #00adb5; }
+        .status-badge { display: inline-block; padding: 6px 15px; border-radius: 20px; font-weight: bold; font-size: 14px; margin-top: 10px; }
+        .bg-online { background: #28a745; color: white; }
+        .bg-offline { background: #dc3545; color: white; }
+        .data-box { background: #2a2a2a; padding: 12px; margin: 10px 0; border-radius: 6px; text-align: left; }
+        span { font-weight: bold; color: #00adb5; }
+        pre { background: #111; padding: 10px; border-radius: 4px; overflow-x: auto; color: #a9ffb2; font-size: 12px; }
     </style>
 </head>
 <body>
-    <div class="card">
+    <div class="card" id="main-card">
         <h1>🚀 A10 Server - Dashboard</h1>
-        <p>Status: <strong id="status">Memuat...</strong></p>
-        <p>🌡️ Suhu Chipset: <span id="suhu">0°C</span></p>
-        <p>💨 Status Kipas: <span id="kipas">-</span></p>
-        <p>💾 Penyimpanan: <pre id="storage">-</pre></p>
+        <p>Status: <span id="status-label" class="status-badge bg-offline">🔴 OFFLINE</span></p>
+        <div class="data-box">🌡️ Suhu Chipset: <span id="suhu">-- °C</span></div>
+        <div class="data-box">💨 Status Kipas: <span id="kipas">--</span></div>
+        <div class="data-box">💾 Penyimpanan: <pre id="storage">Mencari koneksi server...</pre></div>
     </div>
+
     <script>
+        // LINK CLOUDFLARE PERMANEN SUDAH TERKUNCI AMAN DI SINI
+        const TARGET_URL = 'https://trycloudflare.com'; 
+
         async function updateStats() {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 4000); 
+
             try {
-                const res = await fetch('/api/stats');
+                const res = await fetch(`${TARGET_URL}/api/stats`, { signal: controller.signal });
                 const data = await res.json();
-                document.getElementById('status').innerText = data.statusServer;
+                clearTimeout(timeoutId);
+
+                // JIKA BERHASIL TERHUBUNG (🟢 ONLINE)
+                document.getElementById('main-card').className = "card online";
+                document.getElementById('status-label').className = "status-badge bg-online";
+                document.getElementById('status-label').innerText = "🟢 ONLINE";
                 document.getElementById('suhu').innerText = data.suhu;
                 document.getElementById('kipas').innerText = data.kipas;
                 document.getElementById('storage').innerText = data.internalSpace;
-            } catch (e) { document.getElementById('status').innerText = "OFFLINE 🔴"; }
+            } catch (e) {
+                // JIKA TERPUTUS / RTO (🔴 OFFLINE)
+                document.getElementById('main-card').className = "card offline";
+                document.getElementById('status-label').className = "status-badge bg-offline";
+                document.getElementById('status-label').innerText = "🔴 OFFLINE";
+                document.getElementById('suhu').innerText = "STANDBY";
+                document.getElementById('kipas').innerText = "MATI";
+                document.getElementById('storage').innerText = "Koneksi terputus. Server mati atau jembatan network terputus.";
+            }
         }
-        setInterval(updateStats, 3000);
-        updateStats();
+
+        // Cek data otomatis secara berkala setiap 4 detik
+        setInterval(updateStats, 4000);
+        updateStats(); 
     </script>
 </body>
 </html>
